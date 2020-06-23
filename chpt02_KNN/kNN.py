@@ -25,6 +25,47 @@ def classify0(inX,dataSet,labels,k):
 
     return sortedClassCount[0][0] #return the first item in the first tuple
 
+def file2matrix(filename):
+    with open(filename) as f:
+        fileData=[data.strip().split('\t') for data in f.readlines()]
+        returnMat=np.array(fileData)[:,:3].astype(float)
+        classLabelVector=np.array(fileData)[:,3].astype(float).flatten()
+        return returnMat,classLabelVector
+
+def autoNorm(dataset):
+    minVal=dataset.min(0)
+    maxVal=dataset.max(0)
+    rangeVal=maxVal-minVal
+    normVal=(dataset-minVal)/rangeVal
+    return minVal,maxVal,normVal
+
+
+def datingClassTest():
+    datingDataMat, datingLabels = file2matrix('datingTestSet2.txt')
+    hoRatio = 0.1
+    dataNum = len(datingDataMat)
+    trainingNum = dataNum - int(dataNum * 0.1)
+    testingNum = int(dataNum * 0.1)
+
+    indx = list(range(datingDataMat.shape[0]))
+    np.random.shuffle(indx)
+    datingDataMat = datingDataMat[indx]
+    datingLabels = datingLabels[indx]
+    minVal, maxVal, normVal = autoNorm(datingDataMat)
+
+    X_train, y_train, X_test, y_test = normVal[:trainingNum], datingLabels[:trainingNum], + \
+        normVal[trainingNum:], datingLabels[trainingNum:]
+    correctNum = 0
+    for indx, testData in enumerate(X_test):
+        y_pred = classify0(testData, X_train, y_train, 3)
+        y_true = y_test[indx]
+        if y_pred == y_true:
+            correctNum += 1
+
+    acc = correctNum / testingNum
+    return X_train, y_train, X_test, y_test, acc
+
+
 
 
 
@@ -37,4 +78,13 @@ if __name__=="__main__":
     inX=[0.2,0.3]
 
     pred_label=classify0(inX,group,labels,2)
-    print(pred_label)
+    # print(pred_label)
+
+    returnMat,classLabelVector=file2matrix('datingTestSet.txt')
+    print(returnMat.shape)
+    print(classLabelVector)
+
+    minVal,maxVal,normVal=autoNorm(returnMat)
+    print('minVal',minVal)
+    print('maxVal',maxVal)
+    print('normVal',normVal)
