@@ -1,5 +1,6 @@
 import numpy as np
 import operator
+import os
 
 def createDataSet():
     group=np.array([[1.0,1.1],[1.0,1.0],[0,0],[0,0.1]])
@@ -37,8 +38,7 @@ def autoNorm(dataset):
     maxVal=dataset.max(0)
     rangeVal=maxVal-minVal
     normVal=(dataset-minVal)/rangeVal
-    return minVal,maxVal,normVal
-
+    return minVal,rangeVal,normVal
 
 def datingClassTest():
     datingDataMat, datingLabels = file2matrix('datingTestSet2.txt')
@@ -66,7 +66,62 @@ def datingClassTest():
     return X_train, y_train, X_test, y_test, acc
 
 
+def classifyPerson():
+    resultList = ['not at all', 'in small dose', 'in large dose']
+    percentTats = float(input('percentage of time spent playing video games?'))
+    ffMiles = float(input('frequent flier miles earned per year'))
+    iceCream = float(input('liters of ice cream consumed per year'))
 
+    datingDataMat, datingLabels = file2matrix('datingTestSet2.txt')
+    minVal, rangeVal, normVal = autoNorm(datingDataMat)
+    intArr = np.array([[ffMiles, percentTats, iceCream]])
+    y_pred = classify0(intArr - minVal / rangeVal, normVal, datingLabels, 3)
+
+    print('You will probabily like this person:', resultList[int(y_pred) - 1])
+
+
+# convert the image file into row vector
+def img2vector(filename):
+    with open(filename) as f:
+        data=f.readlines()
+        dataMat=np.zeros((1,1024))
+        i=0
+        for dr in data:
+            for d in dr[:32]:
+                dataMat[0,i]=int(d)
+                i+=1
+    return dataMat
+
+
+
+def handWritingClassTest():
+    currPath = os.path.abspath(os.path.dirname('__file__'))
+    dataPath = os.path.join(currPath, 'digits')
+    trainingData = os.path.join(dataPath, 'trainingDigits')
+    testingData = os.path.join(dataPath, 'testDigits')
+    trainFiles = os.listdir(trainingData)
+    numTrain = len(trainFiles)
+    trainingMat = np.zeros((numTrain, 1024))
+    hwLabels = []
+    for i in range(numTrain):
+        train_data = img2vector(os.path.join(trainingData, trainFiles[i]))
+
+        hwLabels.append(int(trainFiles[i].split('_')[0]))
+        trainingMat[i, :] = train_data[0]
+
+    testFiles = os.listdir(testingData)
+    correctNum = 0
+    numTest = len(testFiles)
+
+    for t in range(numTest):
+        test_data = img2vector(os.path.join(testingData, testFiles[t]))
+        test_Label = int(testFiles[t].split('_')[0])
+        y_pred = classify0(test_data, trainingMat, hwLabels, 3)
+        print('the classifier came back with: %d, the real answer is: %d' % (y_pred, test_Label))
+        if y_pred == test_Label:
+            correctNum += 1
+    print('the total testing samples that were predicted correctly is:', correctNum)
+    print('the prediction accuracy is ', np.round(correctNum / numTest, 3))
 
 
 if __name__=="__main__":
